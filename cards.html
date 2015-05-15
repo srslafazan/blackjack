@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cards</title>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.css'>
+    <link rel='stylesheet' href='main.css'>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type='text/javascript' src='main.js'></script>
+    
+    <script type='text/javascript'>
+
+    var name;
+    var Player1;
+    var Dealer1;
+    var gameOver = true;
+
+    function assignPlayerName(){
+        Player1 = new Player(name);
+        console.log(Player1);
+    }
+
+    var Deck = function Deck () {
+            var name = '';
+            var faces = ["Ace", '2', '3', '4', '5', '6', '7', '8', '9', '10', "Jack", "Queen", "King"];
+            var suits = ["Clubs", "Diamonds", "Hearts", "Spades"];
+
+            
+
+            this.build = function(){
+                var deck = [];
+                for ( i in suits ) {
+                    for ( j in faces ){
+                        deck.push(faces[j] + " of " + suits[i]); 
+                    }
+                }
+                return deck;
+            };
+            
+            this.deck = this.build();
+
+            this.shuffle = function(){
+                for ( i in this.deck ){
+                    var randomIndex = Math.floor(Math.random()*(this.deck.length));
+                    while(randomIndex === i){
+                        randomIndex = Math.floor(Math.random()*(this.deck.length));
+                    }
+                    var tmp = this.deck[i];
+                    this.deck[i] = this.deck[randomIndex];
+                    this.deck[randomIndex] = tmp;
+                }
+                console.log(this.deck);
+                return this;
+            };
+
+            this.reset = function(){
+                this.deck = this.build();
+                return this;
+            };
+
+            this.deal = function(){
+
+                var randomIndex = Math.floor(Math.random()*this.deck.length);
+                var dealt = this.deck[randomIndex];
+                this.deck[randomIndex] = this.deck[this.deck.length - 1];
+                this.deck.pop();
+                return dealt;
+            };
+        };
+
+        var Player = function Player(name){
+
+            this.name = name;
+            this.hand = [];
+            this.currentPoints = 0;
+
+            this.draw = function(deck){
+                card = deck.deal();
+                this.hand.push(card);
+
+                value = card.split(" ")[0];
+                var cardPoints;
+                    switch(value){
+                        case 'Ace': cardPoints = 11;
+                        break;
+                        case 'Jack': cardPoints = 10;
+                        break;
+                        case 'Queen': cardPoints = 10;
+                        break;
+                        case 'King': cardPoints = 10;
+                        break;
+                        default: cardPoints = Number(value);
+                    };
+                this.currentPoints += cardPoints;
+                return this;
+            }
+
+            this.discard = function(i){
+                if ( i === undefined && this.hand.length ){
+                    return this.hand.pop();
+                } else if(this.hand[i]){
+                    discard = this.hand[i];
+                    this.hand[i] = this.hand[this.hand.length - 1];
+                    this.hand.pop()
+                    return discard;
+                } else {
+                    console.log(this.name + " could not discard because there is no card in the specified position.");
+                }
+                return this;
+            }
+
+            this.discardAll = function(){
+                while(this.hand.length){
+                    this.hand.pop();
+                }
+                return this;
+            }
+
+            this.showHand = function(){
+                console.log(this.hand);
+                return this;
+            }
+        }
+        
+    function playerStays(){
+        var i = 2;
+        while( Dealer1.currentPoints < 17 ){
+            console.log('dealer hits');
+            Dealer1.draw(deck);
+            console.log(Dealer1.currentPoints); 
+            $('#dealer').append('<div class="card">' + Dealer1.hand[i] + '</div>');
+            i++;
+        }        
+        console.log('dealer stays');
+        
+        if ( Dealer1.currentPoints > 21) {
+            // dealer busts
+            alert("Dealer busts! Player#name wins!");
+            //start new game/deal new round
+        } else if ( Dealer1.currentPoints > Player1.currentPoints ){ // dealer score higher than player score when he stays
+            // dealer wins
+            alert('Dealer wins!');
+            //start new game/deal new round
+        } else {
+            // player wins
+            alert('dealer loses, player wins');
+            //start new game/deal new round
+        }
+        gameOver=true;
+    }
+
+
+
+        var deck = new Deck();
+
+$(document).ready(function(){
+
+    $('.hidden').hide();
+
+    $('#intro button').click(function(){
+        $('#intro p, #intro button').fadeOut(1000);
+        $('#playerName').fadeIn(3000);
+        $('#name').focus();
+    });
+
+    $('#playerName form').submit(function(){
+        name = $('#name').val();
+
+        Player1 = new Player(name);
+        Dealer1 = new Player('Dealer');
+
+        $('#player div').append('<h3>' + name + '</h3>');
+        $('.hidden').fadeIn(2000);
+        $('#playerName').remove();
+
+        event.preventDefault();
+    });
+
+    console.log(deck);
+
+// HIT PLAYER    
+    $('#hit').click(function(){
+        console.log(Player1.currentPoints);
+        if(gameOver) {
+            console.log("The game is already over!");
+        }
+        else if( Player1.hand.length && Player1.currentPoints < 21 ){
+                
+                Player1.draw(deck);
+                $('#player').append('<div class="card">' + Player1.hand[Player1.hand.length-1] + '</div>');
+                console.log(Player1.hand);
+                if( Player1.currentPoints > 21 ) {
+                    alert("Bust!");
+                    gameOver = true;
+                }
+
+        }   else if (!Player1.hand.length) console.log('Cannot hit unless hand has been dealt.');
+            else if (Player1.currentPoints > 21 ) {
+                // logic to deal with 11 or 1 point Ace situations
+            }
+            else if (Player1.currentPoints > 21 ) console.log("Player1 already busted!");
+    });
+
+// STAY PLAYER
+    $('#stay').click(function(){
+        // check scores and start dealer hitting
+        if(Player1.hand.length && !gameOver){
+            playerStays();
+            $('#dealer').append('<div class="card">' + Dealer1.hand[0] + '</div>'); 
+            console.log(Dealer1.hand[0]);           
+        } else{
+            console.log('Cannot stay unless hand has been dealt.');
+        }
+    });
+
+// NEW ROUND 
+    $('#newGame').click(function(){
+        if (gameOver) {
+            $('.player .card').remove(); // remove DOM cards
+    
+            Dealer1.discardAll();
+            Player1.discardAll();
+            Player1.currentPoints = 0;
+            Dealer1.currentPoints = 0;
+
+            deck.reset().shuffle();
+
+            Player1.draw(deck);
+            Player1.draw(deck);
+
+            Dealer1.draw(deck);
+            Dealer1.draw(deck);
+
+            $('#player').append('<div class="card">' + Player1.hand[0] + '</div>');
+            $('#player').append('<div class="card">' + Player1.hand[1] + '</div>');
+            $('#dealer').append('<div class="card">' + Dealer1.hand[1] + '</div>');
+            if( Dealer1.currentPoints == 21 ){
+                gameOver = true;
+                $('#dealer').append('<div class="card">' + Dealer1.hand[0] + '</div>');
+                alert("Dealer got 21!");
+            } else if ( Player1.currentPoints == 21 ){
+                gameOver = true;
+                alert("Player1 got 21!");
+            }            
+        }
+        else {
+            console.log('game has already startred.');
+        }
+        gameOver = false;
+
+    });    
+// NEW PLAYER
+    $('#logout').click(function(){
+        location.reload();
+    });
+
+});
+
+// TO-DO LIST
+    // 1. MAKE CARD VISUALS
+    // 2. SCORING
+    // 3. DEAL WITH ACE VALUE (1 VS 11)
+
+    </script>
+</head>
+<body>
+<div class='container'>
+    <h1>BlackJack</h1>
+<!-- INTRO -->
+    <div id='intro'>
+        <p>Welcome to Dojo BlackJack!</p>
+        <button class=''>I'm Ready!</button>
+    </div>
+    <div id='playerName' class='hidden'>
+        <p>What's your Player Name?</p>
+        <form action='/' method='post'>
+            <input id='name' type='text' name='name' autofocus>
+        </form>
+    </div>
+
+<!-- GAME INTERFACE -->    
+    <div class='row'>
+        <div id='dealer' class='player hidden six columns'>
+            <div>
+                <h3>Dealer</h3>
+            </div>
+        </div>
+        <div id="player" class='player hidden six columns'>
+            <div>
+                <h4 id="money">Money</h4>
+            </div>
+        </div>
+
+    </div>
+
+<!-- COMMANDS -->
+    <div id='commands'>
+        <button id='hit' class='hidden'>Hit</button>
+        <button id='stay' class='hidden'>Stay</button>
+    </div>
+    <div>
+        <button id='newGame' class='hidden'>Shuffle and Deal New Round</button>
+        <button id='logout' class='hidden'>New Player</button>
+    </div>
+
+</div>
+</body>
+</html>
